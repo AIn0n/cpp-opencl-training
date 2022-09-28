@@ -1,0 +1,4 @@
+in this file I store commands which help me to get openCL working. Unfortunately, but for Linux platform 
+with AMD gpu installing this is last circle of hell :(
+
+sudo apt install ocl-icd-opencl-dev

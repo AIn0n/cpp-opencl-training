@@ -1,0 +1,18 @@
+{
+    "version": 2,
+    "cmakeMinimumRequired": {
+        "major" : 3,
+        "minor" : 20,
+        "patch" : 0
+    },
+    "configurePresets": [
+        {
+            "name": "dev",
+            "generator": "Ninja",
+            "binaryDir": "${sourceDir}/build/${presetName}",
+            "cacheVariables": {
+                "CMAKE_CXX_COMPILER": "g++"
+            }
+        }
+    ]
+}
