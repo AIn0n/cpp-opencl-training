@@ -3,6 +3,9 @@
 #include <iostream>
 #include <fstream>
 #include <cassert>
+#include <fstream>
+#include <iterator>
+
 
 int main() 
 {
@@ -27,16 +30,11 @@ int main()
     assert(res == CL_SUCCESS);
 
     /* command queue initialization */
-    cl_command_queue queue = clCreateCommandQueue(context, device, 0, &res);
+    cl_command_queue queue = clCreateCommandQueueWithProperties(context, device, 0, &res);
     assert(res == CL_SUCCESS);
 
-    std::string src = "\
-    __kernel void vector_sum(__constant uint* in, __global uint* out, const int width, const int height) {   \
-    const int x = get_global_id(0);         \
-    const int y = get_global_id(1);         \
-    const uint idx = x + y * width;         \
-    out[idx] = in[idx] > 10;                \
-    }";
+    std::ifstream ifs("src/functions.cl");
+    std::string src(std::istreambuf_iterator<char>{ifs}, {});
 
     const char *source = src.c_str();
     size_t length = src.length();
@@ -57,34 +55,34 @@ int main()
     }
 
     /* kernel initalization */
-    cl_kernel kernel = clCreateKernel(program, "vector_sum", &res);
+    cl_kernel kernel = clCreateKernel(program, "binary_threshold", &res);
     assert(res == CL_SUCCESS);
 
     size_t width = 6;
     size_t height = 6;
 
-    /* input buffer prepare */
-    cl_mem in_vec = clCreateBuffer(context, CL_MEM_READ_ONLY,  width * height * sizeof(int32_t), nullptr, &res);
-    assert(res == CL_SUCCESS);
-
-    /* kernel size */
-    //size_t kernel_size = 3;
-
-    /* input buffer fill */
-
     int32_t in_vec_data[] {
         0, 1, 1, 1, 0, 0,
         0, 1, 100, 10, 0, 0,
-        0, 1, 100, 13, 0, 0,
-        0, 1, 1, 1, 0, 0,
+        0, 22, 100, 13, 0, 0,
+        0, 1, 11, 1, 0, 0,
         0, 1, 1, 1, 0, 0,
         0, 1, 1, 1, 0, 0
     };
-    res = clEnqueueWriteBuffer(queue, in_vec, CL_TRUE, 0, width * height * sizeof(int32_t), in_vec_data, 0, nullptr, nullptr);
+
+    /* read output buffer */
+    int32_t out_vec_data[width * height] {0};
+
+    /* input buffer prepare */
+    cl_mem in_vec = clCreateBuffer(context, CL_MEM_READ_ONLY,  width * height * sizeof(*in_vec_data), nullptr, &res);
+    assert(res == CL_SUCCESS);
+
+    /* input buffer fill */
+    res = clEnqueueWriteBuffer(queue, in_vec, CL_TRUE, 0, width * height * sizeof(*in_vec_data), in_vec_data, 0, nullptr, nullptr);
     assert(res == CL_SUCCESS);
 
     /* output buffer C prepare */
-    cl_mem out_vec = clCreateBuffer(context, CL_MEM_WRITE_ONLY, width * height * sizeof(int32_t), nullptr, &res);
+    cl_mem out_vec = clCreateBuffer(context, CL_MEM_WRITE_ONLY, width * height * sizeof(*out_vec_data), nullptr, &res);
     assert(res == CL_SUCCESS);
 
     /* add all buffers to kernel */
@@ -96,17 +94,9 @@ int main()
 
     /* dimension size specification */
     size_t globalWorkSize[2] {width, height};
-    size_t localWorkSize = 2;
-    res = clEnqueueNDRangeKernel(queue, kernel, 2, 0, globalWorkSize, nullptr, 0, nullptr, nullptr);
+    res |= clEnqueueNDRangeKernel(queue, kernel, 2, 0, globalWorkSize, nullptr, 0, nullptr, nullptr);
+    res |= clEnqueueReadBuffer(queue, out_vec, CL_TRUE, 0, width * height * sizeof(*out_vec_data), out_vec_data, 0, nullptr, nullptr);
     assert(res == CL_SUCCESS);
-
-    /* read output buffer */
-    int32_t out_vec_data[width * height] {0};
-    res = clEnqueueReadBuffer(queue, out_vec, CL_TRUE, 0, width * height * sizeof(int32_t), out_vec_data, 0, nullptr, nullptr);
-    if (res != CL_SUCCESS) {
-        std::cout << "error: " << res << "LINE: " << __LINE__ << '\n';
-        return 1;
-    }
 
     /* wait to all tasks ends */
     clFinish(queue);
