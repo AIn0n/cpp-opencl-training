@@ -55,23 +55,23 @@ int main()
     }
 
     /* kernel initalization */
-    cl_kernel kernel = clCreateKernel(program, "binary_threshold", &res);
+    cl_kernel kernel = clCreateKernel(program, "median_filter_3", &res);
     assert(res == CL_SUCCESS);
 
     size_t width = 6;
     size_t height = 6;
 
-    int32_t in_vec_data[] {
-        0, 1, 1, 1, 0, 0,
-        0, 1, 100, 10, 0, 0,
-        0, 22, 100, 13, 0, 0,
-        0, 1, 11, 1, 0, 0,
-        0, 1, 1, 1, 0, 0,
-        0, 1, 1, 1, 0, 0
+    uint32_t in_vec_data[] {
+        0, 11, 11, 11, 0, 0,
+        0, 11, 11, 11, 0, 0,
+        0, 11, 11, 11, 0, 0,
+        0, 11, 11, 11, 0, 0,
+        0, 11, 11, 11, 0, 0,
+        0, 11, 11, 11, 0, 0
     };
 
     /* read output buffer */
-    int32_t out_vec_data[width * height] {0};
+    uint32_t out_vec_data[width * height] {0};
 
     /* input buffer prepare */
     cl_mem in_vec = clCreateBuffer(context, CL_MEM_READ_ONLY,  width * height * sizeof(*in_vec_data), nullptr, &res);
