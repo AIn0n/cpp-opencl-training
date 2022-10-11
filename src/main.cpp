@@ -31,9 +31,11 @@ int main()
     assert(res == CL_SUCCESS);
 
     std::string src = "\
-    __kernel void vector_sum(__constant float* a, __constant float* b, __global float* c) {   \
-    const int i = get_global_id(0);       \
-    c[i] = a[i] + b[i];             \
+    __kernel void vector_sum(__constant uint* in, __global uint* out, const int width, const int height) {   \
+    const int x = get_global_id(0);         \
+    const int y = get_global_id(1);         \
+    const uint idx = x + y * width;         \
+    out[idx] = in[idx] > 10;                \
     }";
 
     const char *source = src.c_str();
@@ -58,45 +60,49 @@ int main()
     cl_kernel kernel = clCreateKernel(program, "vector_sum", &res);
     assert(res == CL_SUCCESS);
 
-    /* input buffer A prepare */
-    cl_mem veca = clCreateBuffer(context, CL_MEM_READ_ONLY, 2 * sizeof(float), nullptr, &res);
-        assert(res == CL_SUCCESS);
+    size_t width = 6;
+    size_t height = 6;
 
-    /* input buffer A fill */
-    float vecaData[] {15.0f, 8.0f};
-    clEnqueueWriteBuffer(queue, veca, CL_TRUE, 0, 2 * sizeof(float), vecaData, 0, nullptr, nullptr);
+    /* input buffer prepare */
+    cl_mem in_vec = clCreateBuffer(context, CL_MEM_READ_ONLY,  width * height * sizeof(int32_t), nullptr, &res);
     assert(res == CL_SUCCESS);
 
-    /* input buffer B prepare */
-    cl_mem vecb = clCreateBuffer(context, CL_MEM_READ_ONLY, 2 * sizeof(float), nullptr, &res);
-    assert(res == CL_SUCCESS);
+    /* kernel size */
+    //size_t kernel_size = 3;
 
-    /* input buffer B fill */
-    float vecbData[] {15.0f, 6.0f};
-    clEnqueueWriteBuffer(queue, vecb, CL_TRUE, 0, 2 * sizeof(float), vecbData, 0, nullptr, nullptr);
+    /* input buffer fill */
+
+    int32_t in_vec_data[] {
+        0, 1, 1, 1, 0, 0,
+        0, 1, 100, 10, 0, 0,
+        0, 1, 100, 13, 0, 0,
+        0, 1, 1, 1, 0, 0,
+        0, 1, 1, 1, 0, 0,
+        0, 1, 1, 1, 0, 0
+    };
+    res = clEnqueueWriteBuffer(queue, in_vec, CL_TRUE, 0, width * height * sizeof(int32_t), in_vec_data, 0, nullptr, nullptr);
     assert(res == CL_SUCCESS);
 
     /* output buffer C prepare */
-    cl_mem vecc = clCreateBuffer(context, CL_MEM_WRITE_ONLY, 2 * sizeof(float), nullptr, &res);
+    cl_mem out_vec = clCreateBuffer(context, CL_MEM_WRITE_ONLY, width * height * sizeof(int32_t), nullptr, &res);
     assert(res == CL_SUCCESS);
 
     /* add all buffers to kernel */
-    res = clSetKernelArg(kernel, 0, sizeof(cl_mem), &veca);
-    assert(res == CL_SUCCESS);
-    res = clSetKernelArg(kernel, 1, sizeof(cl_mem), &vecb);
-    assert(res == CL_SUCCESS);
-    res = clSetKernelArg(kernel, 2, sizeof(cl_mem), &vecc);
+    res |= clSetKernelArg(kernel, 0, sizeof(cl_mem), &in_vec);
+    res |= clSetKernelArg(kernel, 1, sizeof(cl_mem), &out_vec);
+    res |= clSetKernelArg(kernel, 2, sizeof(int), &(width));
+    res |= clSetKernelArg(kernel, 3, sizeof(int), &(height));
     assert(res == CL_SUCCESS);
 
     /* dimension size specification */
-    size_t globalWorkSize = 2;
+    size_t globalWorkSize[2] {width, height};
     size_t localWorkSize = 2;
-    res = clEnqueueNDRangeKernel(queue, kernel, 1, 0, &globalWorkSize,  &localWorkSize, 0, nullptr, nullptr);
+    res = clEnqueueNDRangeKernel(queue, kernel, 2, 0, globalWorkSize, nullptr, 0, nullptr, nullptr);
     assert(res == CL_SUCCESS);
 
     /* read output buffer */
-    float veccData[2] {0};
-    res = clEnqueueReadBuffer(queue, vecc, CL_TRUE, 0, 2 * sizeof(float), veccData, 0, nullptr, nullptr);
+    int32_t out_vec_data[width * height] {0};
+    res = clEnqueueReadBuffer(queue, out_vec, CL_TRUE, 0, width * height * sizeof(int32_t), out_vec_data, 0, nullptr, nullptr);
     if (res != CL_SUCCESS) {
         std::cout << "error: " << res << "LINE: " << __LINE__ << '\n';
         return 1;
@@ -104,6 +110,11 @@ int main()
 
     /* wait to all tasks ends */
     clFinish(queue);
-    for (int i = 0; i < 2; ++i)
-        std::cout << veccData[i] << '\n';
+    for (int y = 0; y < height; ++y) {
+        for (int x = 0; x < width; ++x) {
+            std::cout << out_vec_data[x + y * width] << ' ';
+        }
+        std::cout << '\n';
+    }
+    return EXIT_SUCCESS;
 }
