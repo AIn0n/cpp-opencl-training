@@ -32,9 +32,8 @@ int main()
 
     std::string src = "\
     __kernel void vector_sum(__constant float* a, __constant float* b, __global float* c) {   \
-    int i = get_global_id(0);       \
-    float sum = a[i] + b[i];        \
-    c[i] = sum;                     \
+    const int i = get_global_id(0);       \
+    c[i] = a[i] + b[i];             \
     }";
 
     const char *source = src.c_str();
@@ -78,7 +77,7 @@ int main()
     assert(res == CL_SUCCESS);
 
     /* output buffer C prepare */
-    cl_mem vecc = clCreateBuffer(context, CL_MEM_READ_ONLY, 2 * sizeof(float), nullptr, &res);
+    cl_mem vecc = clCreateBuffer(context, CL_MEM_WRITE_ONLY, 2 * sizeof(float), nullptr, &res);
     assert(res == CL_SUCCESS);
 
     /* add all buffers to kernel */
