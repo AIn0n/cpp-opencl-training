@@ -55,7 +55,7 @@ int main()
     }
 
     /* kernel initalization */
-    cl_kernel kernel = clCreateKernel(program, "median_filter_3", &res);
+    cl_kernel kernel = clCreateKernel(program, "median_filter_5", &res);
     assert(res == CL_SUCCESS);
 
     size_t width = 6;

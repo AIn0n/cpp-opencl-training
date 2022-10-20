@@ -50,3 +50,21 @@ __kernel void median_filter_3(__constant uint* in, __global uint* out, const int
         out[x + y * width] = 0;
     }
 }
+
+__kernel void median_filter_5(__constant uint* in, __global uint* out, const int width, const int height)
+{
+    const int x = get_global_id(0);
+    const int y = get_global_id(1);
+    if (x + 2 >= width || y + 2 >= height || x - 2 < 0 || y -2 < 0) {
+        out[x + y * width] = 0;
+    }
+    uint buffer[25];
+    int i = 0;
+    for (int ky = -2; ky < 3; ++ky) {
+        for (int kx = -2; ky < 3; ++kx) {
+            buffer[i++] = get_idx(in, x + kx, y + ky, width);
+        }
+    }
+    insertion_sort(buffer, 25);
+    out[x + y * width] = buffer[12];
+}
