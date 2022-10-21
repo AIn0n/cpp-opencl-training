@@ -55,16 +55,16 @@ int main()
     }
 
     /* kernel initalization */
-    cl_kernel kernel = clCreateKernel(program, "median_filter_5", &res);
+    cl_kernel kernel = clCreateKernel(program, "sobel_filter", &res);
     assert(res == CL_SUCCESS);
 
     size_t width = 6;
     size_t height = 7;
 
     uint32_t in_vec_data[] {
-        3, 11, 3, 11, 0, 0,
-        0, 11, 11, 3, 0, 0,
-        0, 11, 3, 3, 0, 0,
+        0, 11, 11, 11, 0, 0,
+        0, 11, 11, 11, 0, 0,
+        0, 11, 11, 11, 0, 0,
         0, 11, 11, 11, 0, 0,
         0, 11, 11, 11, 0, 0,
         0, 11, 11, 11, 0, 0,
