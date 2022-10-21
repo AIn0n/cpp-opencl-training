@@ -61,7 +61,7 @@ __kernel void median_filter_5(__constant uint* in, __global uint* out, const int
     uint buffer[25];
     int i = 0;
     for (int ky = -2; ky < 3; ++ky) {
-        for (int kx = -2; ky < 3; ++kx) {
+        for (int kx = -2; kx < 3; ++kx) {
             buffer[i++] = get_idx(in, x + kx, y + ky, width);
         }
     }

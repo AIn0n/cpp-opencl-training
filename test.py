@@ -12,9 +12,4 @@ arr = np.array([
 ])
 
 output = cv2.medianBlur(np.int16(arr), 5)
-lista = [0, 11, 11, 3, 0,
-3, 11, 3, 11, 0,
-0, 11, 3, 3, 0,
-0, 11, 11, 11, 0,
-0, 11, 11, 11, 0]
-print(sorted(lista)[12])
+print(output)
