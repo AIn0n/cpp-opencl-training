@@ -6,25 +6,46 @@
 #include <fstream>
 #include <iterator>
 
-
-int main() 
+cl_device_id
+get_gpu_device_id(cl_int& err_code)
 {
     /* search thru platforms (IDKs) */
     cl_platform_id platforms[64];
     uint platformCount;
-    cl_int res = clGetPlatformIDs(64, platforms, &platformCount);
-    assert(res == CL_SUCCESS);
+    err_code = clGetPlatformIDs(64, platforms, &platformCount);
+    if (err_code != CL_SUCCESS)
+        return nullptr;
 
     /* search thru devices and found any kind of GPU */
     cl_device_id device = nullptr;
     for (int i = 0; i < platformCount && device == nullptr; ++i) {
         cl_device_id devices[64];
         uint deviceCount;
-        res = clGetDeviceIDs(platforms[i], CL_DEVICE_TYPE_GPU, 64, devices, &deviceCount);
-        if (res == CL_SUCCESS)
+        err_code = clGetDeviceIDs(platforms[i], CL_DEVICE_TYPE_GPU, 64, devices, &deviceCount);
+        if (err_code == CL_SUCCESS)
             device = devices[i];
     }
+    return device;
+}
 
+cl_program
+get_program_from_file(const std::string filename, cl_context context, cl_int& err_code)
+{
+    std::ifstream ifs(filename);
+    std::string src(std::istreambuf_iterator<char>{ifs}, {});
+
+    const char *source = src.c_str();
+    size_t length = src.length();
+
+    /* program initialization */
+    return clCreateProgramWithSource(context, 1, &source, &length, &err_code);
+}
+
+int 
+main() 
+{
+    cl_int res = 0;
+    cl_device_id device = get_gpu_device_id(res);
     /* context initalization */
     cl_context context = clCreateContext(nullptr, 1, &device, nullptr, nullptr, &res);
     assert(res == CL_SUCCESS);
@@ -33,16 +54,7 @@ int main()
     cl_command_queue queue = clCreateCommandQueueWithProperties(context, device, 0, &res);
     assert(res == CL_SUCCESS);
 
-    std::ifstream ifs("src/functions.cl");
-    std::string src(std::istreambuf_iterator<char>{ifs}, {});
-
-    const char *source = src.c_str();
-    size_t length = src.length();
-
-    
-
-    /* program initialization */
-    cl_program program = clCreateProgramWithSource(context, 1, &source, &length, &res);
+    cl_program program = get_program_from_file("src/functions.cl", context, res);
     assert(res == CL_SUCCESS);
 
     /* check program build info */
